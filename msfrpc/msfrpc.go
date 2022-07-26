@@ -554,6 +554,7 @@ func (msfrpc *MSFRPC) SessionStop(sessionid int) (string, error) {
 	return result.Result, nil
 }
 
+// command 以\n 结尾eg."ls\n","id\n"
 func (msfrpc *MSFRPC) SessionShellWrite(sessionid int, command string) (int, error) {
 	var result struct {
 		Result int `msgpack:"write_count"`
@@ -572,13 +573,14 @@ func (msfrpc *MSFRPC) SessionShellRead(sessionid int) (string, error) {
 		Data string `msgpack:"data"`
 	}
 
-	err := msfrpc.CallAndUnmarshall("session.shell_write", []interface{}{sessionid}, &result)
+	err := msfrpc.CallAndUnmarshall("session.shell_read", []interface{}{sessionid}, &result)
 	if err != nil {
 		return "", err
 	}
 	return result.Data, nil
 }
 
+// command 以\n 结尾eg."ls\n","id\n"
 func (msfrpc *MSFRPC) SessionMeterpreterWrite(sessionid int, command string) (string, error) {
 	var result RetResult
 
